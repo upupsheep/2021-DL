@@ -917,6 +917,9 @@ int main(int argc, const char* argv[]) {
     // train the model
     std::vector<state> path;
     path.reserve(20000);
+
+    std::vector<int> ep_score;
+
     for (size_t n = 1; n <= total; n++) {
         board b;
         int score = 0;
@@ -943,11 +946,20 @@ int main(int argc, const char* argv[]) {
 
         // update by TD(0)
         tdl.update_episode(path, alpha);
+        ep_score.push_back(score);  // score episode score
         tdl.make_statistic(n, b, score);
         path.clear();
 
         if (n % 10000 == 0) {
+            std::ofstream ofs;
+            ofs.open("scores.txt", std::ofstream::out | std::ofstream::app);
+            for (int _score : ep_score) {
+                ofs << _score << '\n';
+            }
+            ofs.close();
+            // store the model into file
             tdl.save("./model/model_" + std::to_string(n));
+            ep_score.clear();
         }
     }
 
