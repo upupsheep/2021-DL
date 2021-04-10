@@ -4,8 +4,8 @@ from matplotlib.colors import LinearSegmentedColormap
 import math
 
 NO_ACTIVATE = False
-IS_LINEAR = True
-# IS_LINEAR = False
+# IS_LINEAR = True
+IS_LINEAR = False
 epoch_count = 100000
 loss_threshold = 0.005
 lr = 1
