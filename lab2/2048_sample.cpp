@@ -896,7 +896,7 @@ int main(int argc, const char* argv[]) {
 
     // set the learning parameters
     float alpha = 0.1;
-    size_t total = 100000;
+    size_t total = 200000;
     unsigned seed;
     __asm__ __volatile__("rdtsc"
                          : "=a"(seed));
@@ -912,7 +912,7 @@ int main(int argc, const char* argv[]) {
     tdl.add_feature(new pattern({4, 5, 6, 8, 9, 10}));
 
     // restore the model from file
-    // tdl.load("");
+    tdl.load("./model/model_100000");
 
     // train the model
     std::vector<state> path;
@@ -920,7 +920,7 @@ int main(int argc, const char* argv[]) {
 
     std::vector<int> ep_score;
 
-    for (size_t n = 1; n <= total; n++) {
+    for (size_t n = 100001; n <= total; n++) {
         board b;
         int score = 0;
 
