@@ -11,22 +11,6 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 
-def show_data(data):
-    if len(data.shape) == 3:
-        data = data[0]
-
-    if len(data.shape) != 2:
-        raise AttributeError("shape no ok")
-        return
-
-    plt.figure(figsize=(10, 4))
-    for i in range(data.shape[0]):
-        plt.subplot(2, 1, i+1)
-        plt.ylabel("Channel "+str(i+1), fontsize=15)
-        plt.plot(np.array(data[i, :]))
-    plt.show()
-
-
 def gen_dataset(train_x, train_y, test_x, test_y):
     datasets = []
     for x, y in [(train_x, train_y), (test_x, test_y)]:
@@ -155,17 +139,12 @@ def showAccuracy(title='', accline=[80, 85], **kwargs):
                    linestyles='dashed', colors=(0, 0, 0, 0.8))
 
     plt.show()
-
     return fig
 
 
 class AccuracyResult():
-    def __init__(self, fileName="AccuracyResult.csv"):
-        self.filepath = os.path.join('.', fileName)
-        if os.path.isfile(self.filepath):
-            self.df = pd.read_csv(self.filepath, index_col=0)
-        else:
-            self.df = pd.DataFrame(columns=["ReLU", "Leaky ReLU", "ELU"])
+    def __init__(self):
+        self.df = pd.DataFrame(columns=["ReLU", "Leaky ReLU", "ELU"])
         self.mapping = {
             'ELU': 'elu',
             'ReLU': 'relu',
@@ -184,40 +163,14 @@ class AccuracyResult():
 
         if len(rows) != len(self.df.columns):
             raise AttributeError("Not enougth columns")
-
+            
         self.df.loc[modelName] = rows
-
-        # self.df.to_csv(self.filepath)
-
-        if show:
-            fig = showAccuracy(
-                title=modelName,
-                **Accs
-            )
-            fig.savefig(
-                fname=os.path.join('.', modelName + '.png'),
-                dpi=300,
-                metadata={
-                    'Title': modelName,
-                    'Author': '0756110',
-                },
-                bbox_inches="tight",
-            )
 
     def show(self):
         print(self.df)
 
-    def clear(self):
-        self.df = self.df.iloc[0:0]
-        if os.path.isfile(self.filepath):
-            os.remove(self.filepath)
 
-
-def runModels(
-    models, epoch_size, batch_size, learning_rate,
-    optimizer=optim.Adam, criterion=nn.CrossEntropyLoss(),
-    show=True
-):
+def runModels(models, epoch_size, batch_size, learning_rate, optimizer=optim.Adam, criterion=nn.CrossEntropyLoss(), show=True):
     train_loader = DataLoader(train_dataset, batch_size=batch_size)
     test_loader = DataLoader(test_dataset, len(test_dataset))
 
@@ -233,7 +186,11 @@ def runModels(
     for epoch in range(epoch_size):
         train_correct = {key: 0.0 for key in models}
         test_correct = {key: 0.0 for key in models}
+
         # training multiple model
+        for model in models.values():
+            model.train()
+
         for idx, data in enumerate(train_loader):
             x, y = data
             inputs = x.to(device)
@@ -255,6 +212,8 @@ def runModels(
                 optimizer.step()
 
         # testing multiple model
+        for model in models.values():
+            model.eval()
         with torch.no_grad():
             for _, data in enumerate(test_loader):
                 x, y = data
@@ -274,43 +233,38 @@ def runModels(
         for key, value in test_correct.items():
             Accs[key+"_test"] += [(value*100.0) / len(test_dataset)]
 
-        if show:
-            clear_output(wait=True)
-            showAccuracy(
-                title='Epoch [{:4d}]'.format(epoch + 1),
-                **Accs
-            )
-
     # epoch end
     torch.cuda.empty_cache()
     return Accs
 
 
 if __name__ == "__main__":
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('pytorch device : ', device)
 
     AccRes = AccuracyResult()
 
+    # EEGNet
     print('Training & Testing EEGNet')
     models = {
-        "elu": EEGNet(nn.ELU).to(device),
-        "relu": EEGNet(nn.ReLU).to(device),
-        "leaky_relu": EEGNet(nn.LeakyReLU).to(device),
+        "elu": EEGNet(nn.ELU, dropout=0.9).to(device),
+        "relu": EEGNet(nn.ReLU, dropout=0.9).to(device),
+        "leaky_relu": EEGNet(nn.LeakyReLU, dropout=0.9).to(device),
     }
-    Accs = runModels(models, epoch_size=300, batch_size=64,
+    Accs = runModels(models, epoch_size=500, batch_size=64,
                      learning_rate=1e-2, show=False)
     showAccuracy("EEGNet", **Accs)
     AccRes.add("EEGNet", Accs, show=False)
 
+    # DeepConvNet
     print('Training & Testing DeepConvNet')
     models = {
         "elu": DeepConvNet(nn.ELU).to(device),
         "relu": DeepConvNet(nn.ReLU).to(device),
         "leaky_relu": DeepConvNet(nn.LeakyReLU).to(device),
     }
-    Accs = runModels(models, epoch_size=300, batch_size=64,
-                     learning_rate=1e-3, show=False)
+    Accs = runModels(models, epoch_size=500, batch_size=64,
+                     learning_rate=1e-2, show=False)
     showAccuracy("DeepConvNet", **Accs)
     AccRes.add("DeepConvNet", Accs, show=False)
 
