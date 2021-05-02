@@ -1,21 +1,25 @@
 import pandas as pd
 from torch.utils import data
+from torchvision import datasets, transforms
 import numpy as np
+from PIL import Image
+import PIL
+import random
 
 
-def getData(mode):
+def getData(mode, root):
     if mode == 'train':
-        img = pd.read_csv('train_img.csv')
-        label = pd.read_csv('train_label.csv')
+        img = pd.read_csv(root + 'train_img.csv')
+        label = pd.read_csv(root + 'train_label.csv')
         return np.squeeze(img.values), np.squeeze(label.values)
     else:
-        img = pd.read_csv('test_img.csv')
-        label = pd.read_csv('test_label.csv')
+        img = pd.read_csv(root + 'test_img.csv')
+        label = pd.read_csv(root + 'test_label.csv')
         return np.squeeze(img.values), np.squeeze(label.values)
 
 
 class RetinopathyLoader(data.Dataset):
-    def __init__(self, root, mode):
+    def __init__(self, file_root, img_root, mode):
         """
         Args:
             root (string): Root path of the dataset.
@@ -24,8 +28,10 @@ class RetinopathyLoader(data.Dataset):
             self.img_name (string list): String list that store all image names.
             self.label (int or float list): Numerical list that store all ground truth label values.
         """
-        self.root = root
-        self.img_name, self.label = getData(mode)
+        # self.root = root
+        self.file_root = file_root
+        self.img_root = img_root
+        self.img_name, self.label = getData(mode, file_root)
         self.mode = mode
         print("> Found %d images..." % (len(self.img_name)))
 

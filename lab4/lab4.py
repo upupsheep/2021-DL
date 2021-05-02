@@ -5,15 +5,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision.models
-from torchvision import datasets, transforms
 from torch.autograd.function import once_differentiable
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
-import random
 from tqdm import tqdm
-from PIL import Image
-import PIL
+
 
 from dataloader import RetinopathyLoader
 
@@ -305,7 +302,7 @@ if __name__ == '__main__':
         num_workers=4,
     )
 
-    to_train = False
+    to_train = True
 
     if to_train:
         model_names = ["Resnet18", "Resnet50",
