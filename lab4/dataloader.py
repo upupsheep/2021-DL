@@ -53,5 +53,26 @@ class RetinopathyLoader(data.Dataset):
                          
             step4. Return processed image and label
         """
+        path = self.img_root + self.img_name[index] + '.jpeg'
+        label = self.label[index]
 
-        return img, label
+        img = Image.open(path).convert('RGB')
+        if self.mode == 'train':
+            transform_method = transforms.Compose([
+                transforms.RandomCrop(480),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+            ])
+        elif self.mode == 'test':
+            transform_method = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+            ])
+        else:
+            print("invalid mode!")
+
+        return transform_method(img), label
+        # return img, label
