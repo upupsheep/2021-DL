@@ -302,7 +302,7 @@ if __name__ == '__main__':
         num_workers=4,
     )
 
-    to_train = True
+    to_train = False
 
     if to_train:
         # model_names = ["Resnet18", "Resnet50",
