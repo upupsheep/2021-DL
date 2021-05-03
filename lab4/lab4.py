@@ -15,7 +15,7 @@ from tqdm import tqdm
 from dataloader import RetinopathyLoader
 
 sns.set_style("whitegrid")
-device = torch.device("cuda")
+device = torch.device("cuda:2")
 
 
 class ResNetPretrain(nn.Module):
@@ -305,13 +305,20 @@ if __name__ == '__main__':
     to_train = True
 
     if to_train:
-        model_names = ["Resnet18", "Resnet50",
-                       "Resnet18_pretrain", "Resnet50_pretrain"]
-        load_models = [False, False, False, False]
-#         model_names = ["Resnet50_pretrain_2", "Resnet50_2"]
-#         model_names = ["Resnet18_pretrain_2", "Resnet18_2"]
-        model_names = ["Resnet18_2"]
-        load_models = [False]
+        # model_names = ["Resnet18", "Resnet50",
+        #                "Resnet18_pretrain", "Resnet50_pretrain"]
+        # load_models = [False, False, False, False]
+        # model_names = ["Resnet50_2", "Resnet50_pretrain_2"]
+        # model_names = ["Resnet18_2", "Resnet18_pretrain_2"]
+        # load_models = [True, True]
+        model_names = ["Resnet50_2", "Resnet50_pretrain_2"]
+        load_models = [True, True]
+        # model_names = ["Resnet18_pretrain_2", "Resnet50_pretrain_2"]
+        # load_models = [False, False]
+        store_train_accu = []
+        store_test_accu = []
+        store_pretrain_train_accu = []
+        store_pretrain_test_accu = []
 
         for idx, model_name in enumerate(model_names):
             print(model_name)
@@ -380,14 +387,38 @@ if __name__ == '__main__':
 
             print(train_accs)
             print(test_accs)
-            plt.plot(train_accs, label="train")
-            plt.plot(test_accs, label="test")
-            plt.title(model_name)
-            plt.legend(loc='lower right')
-            plt.savefig(model_name + "_result.png")
-            plt.clf()
-            plt.cla()
-            plt.close()
+            if model_name == "Resnet18_2" or model_name == "Resnet50_2":
+                print('store train and test (w/o pretrain)')
+                store_train_accu = train_accs
+                store_test_accu = test_accs
+            elif model_name == "Resnet18_pretrain_2" or model_name == "Resnet50_pretrain_2":
+                print('store train and test (with pretrain)')
+                store_pretrain_train_accu = train_accs
+                store_pretrain_test_accu = test_accs
+            # plt.plot(train_accs, label="train")
+            # plt.plot(test_accs, label="test")
+            # plt.title(model_name)
+            # plt.legend(loc='lower right')
+            # plt.savefig(model_name + "_result.png")
+            # plt.clf()
+            # plt.cla()
+            # plt.close()
+
+
+        # plot comparison figure
+        print(store_train_accu)
+        print(store_pretrain_train_accu)
+        # plt.plot(store_train_accu, label="Train(w/o pretraining)")
+        # plt.plot(store_test_accu, label="Test(w/o pretraining)")
+        plt.plot(store_pretrain_train_accu, label="Train(with pretraining)")
+        plt.plot(store_pretrain_test_accu, label="Test(with pretraining)")
+        plt.title('Result comparison(ResNet50)')
+        plt.legend(loc='upper left')
+        plt.savefig("ResNet50_comparison.png")
+        plt.clf()
+        plt.cla()
+        plt.close()
+        
 
     else:
         model_names = ["./Resnet18_2.pth", "./Resnet50_2.pth",
