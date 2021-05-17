@@ -38,7 +38,7 @@ There are some useful tips listed in the lab assignment.
 You should check them before starting your lab.
 ================================================================================"""
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 SOS_token = 0
 EOS_token = 1
 PAD_token = 2
@@ -241,48 +241,46 @@ class VAE(nn.Module):
         return mu + eps*std
 
 # Encoder
-
-
 class EncoderRNN(nn.Module):
     def __init__(self, input_size, hidden_size):
         super(EncoderRNN, self).__init__()
         self.hidden_size = hidden_size
         self.embedding = nn.Embedding(input_size, hidden_size)
-        self.gru = nn.GRU(hidden_size, hidden_size)
+        # self.gru = nn.GRU(hidden_size, hidden_size)
+        self.rnn = nn.LSTM(hidden_size, hidden_size)
 
     # input_lengths = length of original input size without padding
     # pack_padded_sequence & pad_packed_sequence: process variable input length
-    def forward(self, input, input_lengths, hidden):
+    def forward(self, input, input_lengths, hidden_state, cell_state):
         embedded = self.embedding(input)
         packed = pack_padded_sequence(
             embedded, input_lengths, batch_first=True)
-        packed_outputs, hidden = self.gru(packed, hidden)
+        packed_outputs, (hidden_state, cell_state) = self.rnn(packed, (hidden_state, cell_state))
         outputs, output_lengths = pad_packed_sequence(
             packed_outputs, batch_first=True)
 
-        return outputs, hidden
+        return outputs, hidden_state, cell_state
 
 # Decoder
-
-
 class DecoderRNN(nn.Module):
     def __init__(self, hidden_size, output_size):
         super(DecoderRNN, self).__init__()
         self.hidden_size = hidden_size
         self.embedding = nn.Embedding(output_size, hidden_size)
-        self.gru = nn.GRU(hidden_size, hidden_size)
+        # self.gru = nn.GRU(hidden_size, hidden_size)
+        self.rnn = nn.LSTM(hidden_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
         self.softmax = nn.LogSoftmax(dim=1)
 
-    def forward(self, input, hidden):
+    def forward(self, input, hidden_state, cell_state):
         batch_size = input.size(0)
         output = self.embedding(input).view(-1, batch_size, self.hidden_size)
-        rnn_output, hidden = self.gru(output, hidden)  # S = T(1) x B x H
+        rnn_output, (hidden_state, cell_state) = self.rnn(output, (hidden_state, cell_state))  # S = T(1) x B x H
         rnn_output = rnn_output.squeeze(0)  # squeeze the time dimension
         output = self.out(rnn_output)
         output = self.softmax(output)
 
-        return output, hidden
+        return output, hidden_state, cell_state
 
 
 def loss_fn(recon_x, x, mean, log_var, criterion, KLD_weight):
@@ -311,13 +309,12 @@ def train(input_tensor, input_lengths, input_labels, target_tensor, output_label
         max_length, encoder.hidden_size, device=device)
 
     #----------sequence to sequence part for encoder----------#
-    encoder_output, encoder_hidden = encoder(
-        input_tensor, input_lengths, encoder_hidden)
-    encoder_hidden, mu, logvar = vae(encoder_hidden, output_labels)
+    encoder_output, encoder_hidden_state, encoder_cell_state = encoder(input_tensor, input_lengths, encoder_hidden)
+    encoder_hidden_state, mu, logvar = vae(encoder_hidden_state, output_labels)
 
     decoder_input = torch.tensor(
         [[SOS_token] * len(input_lengths)], dtype=torch.long, device=device).view(-1, 1)
-    decoder_hidden = encoder_hidden  # context vector
+    decoder_hidden_state = encoder_hidden_state  # context vector
     use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
     if not is_train:
         use_teacher_forcing = False
@@ -330,8 +327,8 @@ def train(input_tensor, input_lengths, input_labels, target_tensor, output_label
     if use_teacher_forcing:
         # Teacher forcing: Feed the target as the next input
         for di in range(target_length):
-            decoder_output, decoder_hidden = decoder(
-                decoder_input, decoder_hidden)
+            decoder_output, decoder_hidden_state, decoder_cell_state = decoder(
+                decoder_input, decoder_hidden_state, decoder_cell_state )
             if is_train:
                 all_loss, ce_loss, kl_loss = loss_fn(
                     decoder_output, target_tensor[:, di], mu, logvar, criterion, KLD_weight)
