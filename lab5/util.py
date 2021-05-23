@@ -16,13 +16,6 @@ def get_teacher_forcing_ratio(epoch, epochs):
 
 
 def get_kl_weight(epoch, epochs, kl_annealing_type, time):
-    """
-    :param epoch: i-th epoch
-    :param kl_annealing_type: 'monotonic' or 'cycle'
-    :param time:
-        if('monotonic'): # of epoch for kl_weight from 0.0 to reach 1.0
-        if('cycle'):     # of cycle
-    """
     assert kl_annealing_type == 'monotonic' or kl_annealing_type == 'cycle', 'kl_annealing_type not exist!'
 
     if kl_annealing_type == 'monotonic':
@@ -36,13 +29,6 @@ def get_kl_weight(epoch, epochs, kl_annealing_type, time):
 
 
 def get_gaussian_score(words):
-    """
-    :param words:
-    words = [['consult', 'consults', 'consulting', 'consulted'],
-             ['plead', 'pleads', 'pleading', 'pleaded'],
-             ['explain', 'explains', 'explaining', 'explained'],
-             ['amuse', 'amuses', 'amusing', 'amused'], ....]
-    """
     words_list = []
     score = 0
     # should be your directory of train.txt

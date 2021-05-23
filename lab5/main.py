@@ -29,7 +29,6 @@ time = 2
 
 
 if __name__ == '__main__':
-
     # dataloader
     dataset_train = MyDataSet(path='train.txt', is_train=True)
     loader_train = DataLoader(dataset_train, batch_size=1, shuffle=True)
