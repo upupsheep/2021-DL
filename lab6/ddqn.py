@@ -223,8 +223,8 @@ def main():
     ## arguments ##
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('-d', '--device', default='cuda')
-    parser.add_argument('-m', '--model', default='dqn.pth')
-    parser.add_argument('--logdir', default='log/dqn')
+    parser.add_argument('-m', '--model', default='ddqn.pth')
+    parser.add_argument('--logdir', default='log/ddqn')
     # train
     parser.add_argument('--warmup', default=10000, type=int)
     parser.add_argument('--episode', default=1200, type=int)
