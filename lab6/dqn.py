@@ -83,6 +83,7 @@ class DQN:
         else:
             with torch.no_grad():
                 return self._behavior_net(torch.from_numpy(state).view(1, -1).to(self.device)).max(dim=1)[1].item()
+            # return self._behavior_net(state)
         # raise NotImplementedError
 
     def append(self, state, action, reward, next_state, done):
