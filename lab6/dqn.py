@@ -51,6 +51,7 @@ class Net(nn.Module):
         a = self.relu(self.l1(x))
         a = self.relu(self.l2(a))
         a = self.l3(a)
+        return a
         # raise NotImplementedError
 
 

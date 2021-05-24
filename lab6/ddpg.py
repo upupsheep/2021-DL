@@ -52,8 +52,8 @@ class ActorNet(nn.Module):
         self.l1 = nn.Linear(state_dim, hidden_dim[0])
         self.l2 = nn.Linear(hidden_dim[0], hidden_dim[1])
         self.l3 = nn.Linear(hidden_dim[1], action_dim)
-        self.relu = nn.ReLU
-        self.tanh = nn.TanH
+        self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
         # raise NotImplementedError
 
     def forward(self, x):
